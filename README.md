@@ -30,4 +30,3 @@ Rain falls from the cloud, and the goal is to water the plant below until it blo
 - Weather variations (wind, sun, storms)
 - Mobile-friendly controls
 - Polish UI/animations
-

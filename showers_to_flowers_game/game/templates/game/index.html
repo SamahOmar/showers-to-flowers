@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cloud Gardener</title>
+    <style>
+        body {
+            margin: 0;
+            background: skyblue;
+            overflow: hidden;
+        }
+
+        #cloud {
+            position: absolute;
+            top: 100px;
+            left: 200px;
+            font-size: 50px;
+        }
+
+        #plant {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            font-size: 40px;
+        }
+        #rain-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+         .rain-drop {
+            position: absolute;
+            top: 140px;
+            font-size: 18px;
+            animation: fall 2s linear forwards;
+        }
+
+        @keyframes fall {
+            from {
+                transform: translateY(0px);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(600px);
+                opacity: 0;
+            }
+        #growth-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 10px;
+            border: 2px solid #333;
+            background: white;
+        }
+
+        #growth-fill {
+            height: 100%;
+            width: 0%;
+            background: green;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="cloud">☁️</div>
+    <div id="rain-container"></div>
+    <div id="plant">🌱</div>
+    <div id="growth-bar"></div>
+
+<script>
+    let cloud = document.getElementById("cloud");
+    let rainContainer = document.getElementById("rain-container");
+
+    let x = 200;
+    let y = 100;
+
+    // 🌱 growth system
+    let growth = 0;
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft") x -= 15;
+        if (e.key === "ArrowRight") x += 15;
+
+        cloud.style.left = x + "px";
+    });
+
+    // 🌧️ create rain drop object
+    function createRain() {
+        let drop = document.createElement("div");
+        drop.classList.add("rain-drop");
+        drop.innerHTML = "💧";
+
+        let dropX = x + 20;
+        let dropY = y + 40;
+
+        drop.style.left = dropX + "px";
+        drop.style.top = dropY + "px";
+
+        rainContainer.appendChild(drop);
+
+        // physics object
+        let fallSpeed = 2;
+
+        function fall() {
+            dropY += fallSpeed;
+            drop.style.top = dropY + "px";
+
+            // 🌱 hit ground check
+            if (dropY > window.innerHeight - 80) {
+                growth += 2;
+                updateGrowth();
+
+                drop.remove();
+                return;
+            }
+
+            requestAnimationFrame(fall);
+        }
+
+        fall();
+    }
+
+    // 🌱 update plant growth
+    function updateGrowth() {
+        let plant = document.getElementById("plant");
+
+        if (growth < 30) {
+            plant.innerHTML = "🌱";
+        } else if (growth < 70) {
+            plant.innerHTML = "🌿";
+        } else {
+            plant.innerHTML = "🌸";
+        }
+    }
+
+    // 🌧️ continuous rain
+    setInterval(() => {
+        createRain();
+    }, 200);
+</script>
+
+</body>
+</html>
