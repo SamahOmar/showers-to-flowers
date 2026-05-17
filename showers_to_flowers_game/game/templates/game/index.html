@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Cloud Gardener</title>
+
     <style>
         body {
             margin: 0;
@@ -20,8 +21,10 @@
             position: absolute;
             bottom: 50px;
             left: 50%;
+            transform: translateX(-50%);
             font-size: 40px;
         }
+
         #rain-container {
             position: absolute;
             top: 0;
@@ -30,22 +33,12 @@
             height: 100%;
             pointer-events: none;
         }
-         .rain-drop {
+
+        .rain-drop {
             position: absolute;
-            top: 140px;
             font-size: 18px;
-            animation: fall 2s linear forwards;
         }
 
-        @keyframes fall {
-            from {
-                transform: translateY(0px);
-                opacity: 1;
-            }
-            to {
-                transform: translateY(600px);
-                opacity: 0;
-            }
         #growth-bar {
             position: absolute;
             bottom: 20px;
@@ -61,26 +54,33 @@
             height: 100%;
             width: 0%;
             background: green;
+            transition: width 0.2s;
         }
     </style>
 </head>
+
 <body>
 
     <div id="cloud">☁️</div>
     <div id="rain-container"></div>
     <div id="plant">🌱</div>
-    <div id="growth-bar"></div>
+
+    <div id="growth-bar">
+        <div id="growth-fill"></div>
+    </div>
 
 <script>
     let cloud = document.getElementById("cloud");
     let rainContainer = document.getElementById("rain-container");
+    let plant = document.getElementById("plant");
+    let growthFill = document.getElementById("growth-fill");
 
     let x = 200;
     let y = 100;
 
-    // 🌱 growth system
     let growth = 0;
 
+    // 🌤️ move cloud
     document.addEventListener("keydown", (e) => {
         if (e.key === "ArrowLeft") x -= 15;
         if (e.key === "ArrowRight") x += 15;
@@ -88,7 +88,7 @@
         cloud.style.left = x + "px";
     });
 
-    // 🌧️ create rain drop object
+    // 🌧️ create rain drop
     function createRain() {
         let drop = document.createElement("div");
         drop.classList.add("rain-drop");
@@ -102,17 +102,22 @@
 
         rainContainer.appendChild(drop);
 
-        // physics object
         let fallSpeed = 2;
 
         function fall() {
             dropY += fallSpeed;
             drop.style.top = dropY + "px";
 
-            // 🌱 hit ground check
+            // 🌱 when reaching ground
             if (dropY > window.innerHeight - 80) {
-                growth += 2;
-                updateGrowth();
+
+                let plantRect = plant.getBoundingClientRect();
+
+                // 💧 check if drop is above plant
+                if (dropX > plantRect.left && dropX < plantRect.right) {
+                    growth += 2;
+                    updateGrowth();
+                }
 
                 drop.remove();
                 return;
@@ -124,18 +129,21 @@
         fall();
     }
 
-    // 🌱 update plant growth
+    // 🌱 update plant + bar
     function updateGrowth() {
-        let plant = document.getElementById("plant");
-
-        if (growth < 30) {
-            plant.innerHTML = "🌱";
-        } else if (growth < 70) {
-            plant.innerHTML = "🌿";
-        } else {
-            plant.innerHTML = "🌸";
-        }
+    // 🌱 plant stages
+    if (growth < 40) {
+        plant.innerHTML = "🌱";
+    } else if (growth < 80) {
+        plant.innerHTML = "🌿";
+    } else if (growth == 100) {
+        plant.innerHTML = "🌸";
     }
+
+    // 💚 bar fill (normalized)
+    let percent = Math.min(growth, 100);
+    growthFill.style.width = percent + "%";
+}
 
     // 🌧️ continuous rain
     setInterval(() => {
