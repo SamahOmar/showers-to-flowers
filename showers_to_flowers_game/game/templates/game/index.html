@@ -1,154 +1,26 @@
+{% load static %}
+
 <!DOCTYPE html>
-<html>
+<html lang="">
 <head>
     <title>Cloud Gardener</title>
 
-    <style>
-        body {
-            margin: 0;
-            background: skyblue;
-            overflow: hidden;
-        }
-
-        #cloud {
-            position: absolute;
-            top: 100px;
-            left: 200px;
-            font-size: 50px;
-        }
-
-        #plant {
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 40px;
-        }
-
-        #rain-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .rain-drop {
-            position: absolute;
-            font-size: 18px;
-        }
-
-        #growth-bar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            height: 10px;
-            border: 2px solid #333;
-            background: white;
-        }
-
-        #growth-fill {
-            height: 100%;
-            width: 0%;
-            background: green;
-            transition: width 0.2s;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'game/css/style.css' %}">
 </head>
 
 <body>
 
     <div id="cloud">☁️</div>
+
     <div id="rain-container"></div>
+
     <div id="plant">🌱</div>
+
     <div id="growth-bar">
         <div id="growth-fill"></div>
     </div>
 
-<script>
-    let cloud = document.getElementById("cloud");
-    let rainContainer = document.getElementById("rain-container");
-    let plant = document.getElementById("plant");
-    let growthFill = document.getElementById("growth-fill");
-
-    let x = 200;
-    let y = 100;
-
-    let growth = 0;
-
-    // 🌤️ move cloud
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowLeft") x -= 15;
-        if (e.key === "ArrowRight") x += 15;
-
-        cloud.style.left = x + "px";
-    });
-
-    // 🌧️ create rain drop
-    function createRain() {
-        let drop = document.createElement("div");
-        drop.classList.add("rain-drop");
-        drop.innerHTML = "💧";
-
-        let dropX = x + 20;
-        let dropY = y + 40;
-
-        drop.style.left = dropX + "px";
-        drop.style.top = dropY + "px";
-
-        rainContainer.appendChild(drop);
-
-        let fallSpeed = 2;
-
-        function fall() {
-            dropY += fallSpeed;
-            drop.style.top = dropY + "px";
-
-            // 🌱 when reaching ground
-            if (dropY > window.innerHeight - 80) {
-
-                let plantRect = plant.getBoundingClientRect();
-
-                // 💧 check if drop is above plant
-                if (dropX > plantRect.left && dropX < plantRect.right) {
-                    growth += 2;
-                    updateGrowth();
-                }
-
-                drop.remove();
-                return;
-            }
-
-            requestAnimationFrame(fall);
-        }
-
-        fall();
-    }
-
-    // 🌱 update plant + bar
-    function updateGrowth() {
-    // 🌱 plant stages
-    if (growth < 40) {
-        plant.innerHTML = "🌱";
-    } else if (growth < 80) {
-        plant.innerHTML = "🌿";
-    } else if (growth == 100) {
-        plant.innerHTML = "🌸";
-    }
-
-    // 💚 bar fill (normalized)
-    let percent = Math.min(growth, 100);
-    growthFill.style.width = percent + "%";
-}
-
-    // 🌧️ continuous rain
-    setInterval(() => {
-        createRain();
-    }, 200);
-</script>
+    <script src="{% static 'game/js/game.js' %}"></script>
 
 </body>
 </html>
