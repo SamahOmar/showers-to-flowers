@@ -9,16 +9,41 @@
 </head>
 <body>
 
+<!-- CUTSCENE LAYER -->
+<div id="cutscene" aria-hidden="true">
+    <div id="farmer" role="img" aria-label="Farmer">🧑‍🌾</div>
+    <div id="seed-toss" aria-hidden="true"></div>
+    <div id="sun" role="img" aria-label="Sun">☀️</div>
+    <div id="sun-rays" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div id="your-turn" aria-live="polite"></div>
+  </div>
+
+<!-- GAME LAYER (hidden until cutscene ends) -->
+<div id="game-layer" class="game-hidden">
+
+    <!-- Ambient drifting clouds (JS fills this) -->
+    <div id="sky-clouds" aria-hidden="true"></div>
+
   <p id="controls-hint">← → arrow keys to move cloud</p>
 
-  <div id="cloud" role="img" aria-label="Cloud">☁️</div>
+  <div id="cloud" role="img" aria-label="Rain cloud">☁️</div>
 
   <div id="rain-container" aria-hidden="true"></div>
 
-  <div id="plant" role="img" aria-label="Plant" aria-live="polite">🌱</div>
+  <div id="plant" role="img" aria-label="Plant" aria-live="polite" class="stage-seed">🌱</div>
+
+    <!-- Bloom / overwatered message -->
+    <div id="stage-message" role="status" aria-live="assertive"></div>
+
+    <!-- Confetti burst on bloom -->
+    <div id="confetti-container" aria-hidden="true"></div>
+
 
   <div id="growth-bar-wrapper">
-    <span id="growth-label">Growth</span>
+    <span id="growth-label">🌱 Seed</span>
     <div id="growth-bar"
          role="progressbar"
          aria-label="Plant growth"
@@ -28,6 +53,8 @@
       <div id="growth-fill"></div>
     </div>
   </div>
+
+    </div><!-- /#game-layer -->
 
   <script src="{% static 'game/js/game.js' %}"></script>
 </body>
