@@ -1,26 +1,34 @@
 {% load static %}
-
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 <head>
-    <title>Cloud Gardener</title>
-
-    <link rel="stylesheet" href="{% static 'game/css/style.css' %}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Gardener</title>
+  <link rel="stylesheet" href="{% static 'game/css/style.css' %}">
 </head>
-
 <body>
 
-    <div id="cloud">☁️</div>
+  <p id="controls-hint">← → arrow keys to move cloud</p>
 
-    <div id="rain-container"></div>
+  <div id="cloud" role="img" aria-label="Cloud">☁️</div>
 
-    <div id="plant">🌱</div>
+  <div id="rain-container" aria-hidden="true"></div>
 
-    <div id="growth-bar">
-        <div id="growth-fill"></div>
+  <div id="plant" role="img" aria-label="Plant" aria-live="polite">🌱</div>
+
+  <div id="growth-bar-wrapper">
+    <span id="growth-label">Growth</span>
+    <div id="growth-bar"
+         role="progressbar"
+         aria-label="Plant growth"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         aria-valuenow="0">
+      <div id="growth-fill"></div>
     </div>
+  </div>
 
-    <script src="{% static 'game/js/game.js' %}"></script>
-
+  <script src="{% static 'game/js/game.js' %}"></script>
 </body>
 </html>
