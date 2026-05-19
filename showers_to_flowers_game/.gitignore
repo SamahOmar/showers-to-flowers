@@ -1,0 +1,6 @@
+# showers-to-flowers-main/.gitignore
+*.sqlite3
+__pycache__/
+*.pyc
+*.pyo
+.env
