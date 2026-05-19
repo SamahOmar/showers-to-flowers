@@ -1,52 +1,128 @@
+/* ─────────────────────────────────────────────
+   Showers to Flowers — Refactored Styles
+   Stage 3: visual polish pass
+   Aesthetic: soft watercolour / children's book
+───────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-    margin: 0;
-    background: skyblue;
-    overflow: hidden;
+  font-family: 'Nunito', sans-serif;
+  background: linear-gradient(180deg, #a8d8ea 0%, #c9eaf5 55%, #d4edda 100%);
+  overflow: hidden;
+  height: 100vh;
+  position: relative;
 }
 
+/* ── Ground strip ── */
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 70px;
+  background: linear-gradient(180deg, #7ec850 0%, #5aad30 100%);
+  border-radius: 60% 60% 0 0 / 20px 20px 0 0;
+  z-index: 0;
+}
+
+/* ── Cloud ── */
 #cloud {
-    position: absolute;
-    top: 100px;
-    left: 200px;
-    font-size: 50px;
+  position: absolute;
+  top: 100px;
+  left: 200px;
+  font-size: 56px;
+  cursor: default;
+  user-select: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+  transition: left 0.05s linear;
+  z-index: 10;
 }
 
-#plant {
-    position: absolute;
-    bottom: 50px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 40px;
-}
-
+/* ── Rain container ── */
 #rain-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .rain-drop {
-    position: absolute;
-    font-size: 18px;
+  position: absolute;
+  font-size: 16px;
+  opacity: 0.85;
+  animation: dropFade 0.1s ease-in;
+}
+
+@keyframes dropFade {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 0.85; transform: scale(1); }
+}
+
+/* ── Plant ── */
+#plant {
+  position: absolute;
+  bottom: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 46px;
+  z-index: 10;
+  transition: font-size 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+/* ── Growth bar ── */
+#growth-bar-wrapper {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+}
+
+#growth-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d6a2d;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 #growth-bar {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    height: 10px;
-    border: 2px solid #333;
-    background: white;
+  width: 180px;
+  height: 12px;
+  background: rgba(255,255,255,0.6);
+  border: 2px solid rgba(45,106,45,0.4);
+  border-radius: 999px;
+  overflow: hidden;
 }
 
 #growth-fill {
-    height: 100%;
-    width: 0%;
-    background: green;
-    transition: width 0.2s;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #56c96f, #2d9e3e);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+/* ── Controls hint ── */
+#controls-hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(30, 70, 120, 0.7);
+  background: rgba(255,255,255,0.45);
+  padding: 6px 14px;
+  border-radius: 999px;
+  pointer-events: none;
+  letter-spacing: 0.03em;
+  z-index: 20;
 }
