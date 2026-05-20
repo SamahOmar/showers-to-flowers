@@ -9,7 +9,8 @@ class GameSession(models.Model):
     final_growth = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        ordering = ["-started_at"]
+        #add secondary ordering field - That guarantees newer rows appear first even when timestamps are equal.
+        ordering = ["-started_at", "-pk"]
 
     def __str__(self):
         return f"Session {self.pk} — growth {self.final_growth}%"
