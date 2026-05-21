@@ -19,6 +19,9 @@ class StaticFilesTests(TestCase):
     def test_js_file_exists(self):
         self.assertIsNotNone(finders.find("game/js/game.js"))
 
+    def test_favicon_file_exists(self):
+        self.assertIsNotNone(finders.find("game/img/favicon.svg"))
+
 
 class GamePageTests(TestCase):
 
@@ -31,6 +34,10 @@ class GamePageTests(TestCase):
 
     def test_page_title(self):
         self.assertContains(self.response, "Cloud Gardener")
+
+    def test_favicon_is_linked(self):
+        self.assertContains(self.response, 'rel="icon"')
+        self.assertContains(self.response, "game/img/favicon.svg")
 
     def test_cloud_element_exists(self):
         self.assertContains(self.response, 'id="cloud"')
@@ -46,6 +53,11 @@ class GamePageTests(TestCase):
 
     def test_rain_container_exists(self):
         self.assertContains(self.response, 'id="rain-container"')
+
+    def test_favicon_request_redirects_to_static_file(self):
+        response = self.client.get("/favicon.ico")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response["Location"], "/static/game/img/favicon.svg")
 
 
 # ────────────────────────────────────────────
@@ -127,21 +139,17 @@ class GrowthLogicRegressionTests(TestCase):
     def setUp(self):
         self.response = self.client.get(reverse("index"))
 
-    def test_js_flower_stage_reachable(self):
+    def test_js_flower_stage_waits_for_full_growth(self):
         """
-        BUG FIX: Original code had `growth >= 100` for flower stage, but
-        growth increments by 2 so values 80–99 never triggered it.
-        Refactored code uses threshold 80. This test confirms the JS
-        source contains the corrected threshold value.
+        The flower should only appear when the progress bar is full.
         """
         js_path = finders.find("game/js/game.js")
         self.assertIsNotNone(js_path, "game.js must exist")
         with open(js_path, encoding="utf-8") as f:
             source = f.read()
-        # Flower stage must be triggered at 80, not 100
-        self.assertIn("threshold: 80", source)
-        # The old broken guard must not be present
-        self.assertNotIn("growth >= 100", source)
+        self.assertNotIn('label: "flower"', source)
+        self.assertIn("threshold: 100", source)
+        self.assertIn('label: "bloom"', source)
 
     def test_js_uses_strict_mode(self):
         """Refactored JS must declare 'use strict' to avoid silent global leaks."""
@@ -174,3 +182,14 @@ class GrowthLogicRegressionTests(TestCase):
         with open(js_path, encoding="utf-8") as f:
             source = f.read()
         self.assertIn("DOMContentLoaded", source)
+
+    def test_cloud_keyboard_controls_are_enabled(self):
+        """Cloud movement must remain wired to left/right arrow keys."""
+        js_path = finders.find("game/js/game.js")
+        with open(js_path, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn('window.addEventListener("keydown", handleKey', source)
+        self.assertIn('e.key === "ArrowLeft"', source)
+        self.assertIn('e.key === "ArrowRight"', source)
+        self.assertIn("gameLayer.focus", source)
+        self.assertIn("CloudController.enable()", source)
