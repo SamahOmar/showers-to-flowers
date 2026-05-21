@@ -12,12 +12,25 @@ from game.models import GameSession
 # so that when you refactor, you don’t accidentally break it.
 # ────────────────────────────────────────────
 class StaticFilesTests(TestCase):
+    js_modules = [
+        "game/js/game.js",
+        "game/js/constants.js",
+        "game/js/cloud-controller.js",
+        "game/js/rain-engine.js",
+        "game/js/plant-controller.js",
+        "game/js/growth-bar.js",
+        "game/js/cutscene.js",
+        "game/js/confetti.js",
+        "game/js/ambient-clouds.js",
+    ]
 
     def test_css_file_exists(self):
         self.assertIsNotNone(finders.find("game/css/style.css"))
 
     def test_js_file_exists(self):
-        self.assertIsNotNone(finders.find("game/js/game.js"))
+        for module_path in self.js_modules:
+            with self.subTest(module_path=module_path):
+                self.assertIsNotNone(finders.find(module_path))
 
     def test_favicon_file_exists(self):
         self.assertIsNotNone(finders.find("game/img/favicon.svg"))
@@ -53,6 +66,10 @@ class GamePageTests(TestCase):
 
     def test_rain_container_exists(self):
         self.assertContains(self.response, 'id="rain-container"')
+
+    def test_game_javascript_loads_as_module(self):
+        self.assertContains(self.response, 'type="module"')
+        self.assertContains(self.response, "game/js/game.js")
 
     def test_favicon_request_redirects_to_static_file(self):
         response = self.client.get("/favicon.ico")
@@ -143,12 +160,12 @@ class GrowthLogicRegressionTests(TestCase):
         """
         The flower should only appear when the progress bar is full.
         """
-        js_path = finders.find("game/js/game.js")
+        js_path = finders.find("game/js/constants.js")
         self.assertIsNotNone(js_path, "game.js must exist")
         with open(js_path, encoding="utf-8") as f:
             source = f.read()
         self.assertNotIn('label: "flower"', source)
-        self.assertIn("threshold: 100", source)
+        self.assertIn("BLOOM: 100", source)
         self.assertIn('label: "bloom"', source)
 
     def test_js_uses_strict_mode(self):
@@ -158,23 +175,18 @@ class GrowthLogicRegressionTests(TestCase):
             source = f.read()
         self.assertIn('"use strict"', source)
 
-    def test_js_no_bare_globals(self):
+    def test_js_is_split_into_single_responsibility_modules(self):
         """
-        Original code had bare global variables (let cloud, let x, etc.).
-        Refactored code wraps state in IIFEs. Confirm the old patterns are gone.
-         patterns are gone. Note: 'let growth = 0' legitimately exists inside
-        PlantController's IIFE — that is correct encapsulation, not a global.
+        The entrypoint should orchestrate modules instead of holding every
+        controller implementation.
         """
         js_path = finders.find("game/js/game.js")
         with open(js_path, encoding="utf-8") as f:
             source = f.read()
-            # These were top-level globals in the original — must not exist anymore
-            self.assertNotIn("let cloud =", source)
-            self.assertNotIn("let rainContainer =", source)
-            self.assertNotIn("let plant =", source)
-            # Confirm state is now encapsulated inside IIFEs
-            self.assertIn("const PlantController = (() =>", source)
-            self.assertIn("const CloudController = (() =>", source)
+        self.assertIn('from "./cloud-controller.js"', source)
+        self.assertIn('from "./plant-controller.js"', source)
+        self.assertIn('from "./rain-engine.js"', source)
+        self.assertLess(len(source.splitlines()), 40)
 
     def test_js_domcontentloaded_boot(self):
         """Game must boot on DOMContentLoaded, not immediately on script parse."""
@@ -185,11 +197,14 @@ class GrowthLogicRegressionTests(TestCase):
 
     def test_cloud_keyboard_controls_are_enabled(self):
         """Cloud movement must remain wired to left/right arrow keys."""
-        js_path = finders.find("game/js/game.js")
+        js_path = finders.find("game/js/cloud-controller.js")
         with open(js_path, encoding="utf-8") as f:
             source = f.read()
         self.assertIn('window.addEventListener("keydown", handleKey', source)
         self.assertIn('e.key === "ArrowLeft"', source)
         self.assertIn('e.key === "ArrowRight"', source)
-        self.assertIn("gameLayer.focus", source)
-        self.assertIn("CloudController.enable()", source)
+        entrypoint_path = finders.find("game/js/game.js")
+        with open(entrypoint_path, encoding="utf-8") as f:
+            entrypoint = f.read()
+        self.assertIn("gameLayer.focus", entrypoint)
+        self.assertIn("CloudController.enable()", entrypoint)
