@@ -1,0 +1,24 @@
+<div id="game-layer" tabindex="0">
+  <div id="sky-clouds" aria-hidden="true"></div>
+
+  <p id="controls-hint">← → arrow keys to move cloud</p>
+
+  <div id="cloud" role="img" aria-label="Rain cloud">☁️</div>
+  <div id="rain-container" aria-hidden="true"></div>
+  <div id="plant" role="img" aria-label="Plant" aria-live="polite" class="stage-seed">🌱</div>
+
+  <div id="stage-message" role="status" aria-live="assertive"></div>
+  <div id="confetti-container" aria-hidden="true"></div>
+
+  <div id="growth-bar-wrapper">
+    <span id="growth-label">🌱 Seed</span>
+    <div id="growth-bar"
+         role="progressbar"
+         aria-label="Plant growth"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         aria-valuenow="0">
+      <div id="growth-fill"></div>
+    </div>
+  </div>
+</div>

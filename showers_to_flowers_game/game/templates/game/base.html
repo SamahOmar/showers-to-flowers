@@ -1,0 +1,18 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cloud Gardener{% endblock %}</title>
+  <link rel="icon" href="{% static 'game/img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'game/css/style.css' %}">
+</head>
+<body>
+  {% block content %}{% endblock %}
+
+  {% block scripts %}
+    <script src="{% static 'game/js/game.js' %}?v=20260521-flower"></script>
+  {% endblock %}
+</body>
+</html>
