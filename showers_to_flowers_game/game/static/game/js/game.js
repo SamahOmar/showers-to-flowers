@@ -219,6 +219,7 @@ const CloudController = (() => {
   let x = window.innerWidth / 2 - 35;
   const y = 110;
   let active = false;
+  let initialized = false;
 
   function clamp(val) {
     return Math.max(0, Math.min(window.innerWidth - CLOUD_WIDTH, val));
@@ -226,17 +227,31 @@ const CloudController = (() => {
 
   function handleKey(e) {
     if (!active) return;
-    if (e.key === "ArrowLeft")  { e.preventDefault(); x = clamp(x - STEP); }
-    if (e.key === "ArrowRight") { e.preventDefault(); x = clamp(x + STEP); }
+    const direction = getDirection(e);
+    if (direction === 0) return;
+
+    e.preventDefault();
+    x = clamp(x + direction * STEP);
     el.style.left = x + "px";
+  }
+
+  function getDirection(e) {
+    if (e.key === "ArrowLeft" || e.code === "ArrowLeft") return -1;
+    if (e.key === "ArrowRight" || e.code === "ArrowRight") return 1;
+    return 0;
   }
 
   function init() {
-    document.addEventListener("keydown", handleKey);
+    if (initialized) return;
+    initialized = true;
+    window.addEventListener("keydown", handleKey, { capture: true });
     el.style.left = x + "px";
   }
 
-  function enable()  { active = true;  }
+  function enable()  {
+    init();
+    active = true;
+  }
   function disable() { active = false; }
 
   return { init, enable, disable, getX: () => x, getY: () => y };
@@ -252,7 +267,6 @@ const PlantController = (() => {
   const STAGES = [
     { threshold: 0,   emoji: "🌱", label: "seed",        cls: "stage-seed"    },
     { threshold: 40,  emoji: "🌿", label: "sprout",      cls: "stage-sprout"  },
-    { threshold: 80,  emoji: "🌸", label: "flower",      cls: "stage-flower"  },
     { threshold: 100, emoji: "🌸", label: "bloom",       cls: "stage-bloom"   },
     { threshold: 110, emoji: "🥀", label: "overwatered", cls: "stage-dead"    },
   ];
@@ -368,8 +382,11 @@ const RainEngine = (() => {
   const container = document.getElementById("rain-container");
   const plantEl   = document.getElementById("plant");
 
-  const INTERVAL_MS  = 180;
-  const FALL_SPEED   = 3;
+  const INTERVAL_MS  = 95;
+  const FALL_SPEED   = 7.5;
+  const STREAM_FOLLOW = 0.18;
+  const DROP_ORIGIN_X = 32;
+  const DROP_ORIGIN_Y = 48;
   const WATER_AMOUNT = 2;
   let intervalId     = null;
 
@@ -379,15 +396,19 @@ const RainEngine = (() => {
     drop.setAttribute("aria-hidden", "true");
     drop.textContent = "💧";
 
-    let dropX = CloudController.getX() + 22;
-    let dropY = CloudController.getY() + 48;
+    const streamOffset = Math.random() * 16 - 8;
+    let dropX = getRainOriginX() + streamOffset;
+    let dropY = CloudController.getY() + DROP_ORIGIN_Y;
 
     drop.style.left = dropX + "px";
     drop.style.top  = dropY + "px";
     container.appendChild(drop);
 
     function fall() {
+      const targetX = getRainOriginX() + streamOffset;
+      dropX += (targetX - dropX) * STREAM_FOLLOW;
       dropY += FALL_SPEED;
+      drop.style.left = dropX + "px";
       drop.style.top = dropY + "px";
 
       if (dropY > window.innerHeight - 90) {
@@ -403,6 +424,10 @@ const RainEngine = (() => {
       requestAnimationFrame(fall);
     }
     fall();
+  }
+
+  function getRainOriginX() {
+    return CloudController.getX() + DROP_ORIGIN_X;
   }
 
   function spawnSplash(x, y) {
@@ -460,9 +485,18 @@ function spawnAmbientClouds() {
 const Game = (() => {
   async function init() {
     // Run cutscene first — game controls disabled during it
-    await Cutscene.play();
+    const gameLayer = document.getElementById("game-layer");
+    const cutscene = document.getElementById("cutscene");
+
+    if (cutscene) {
+      await Cutscene.play();
+    } else {
+      gameLayer.classList.remove("game-hidden");
+      gameLayer.style.opacity = "1";
+    }
 
     // Boot game
+    gameLayer.focus({ preventScroll: true });
     spawnAmbientClouds();
     CloudController.init();
     CloudController.enable();
