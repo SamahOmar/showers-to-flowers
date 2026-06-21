@@ -1,17 +1,30 @@
 <div id="game-layer" tabindex="0">
   <div id="sky-clouds" aria-hidden="true"></div>
 
-  <p id="controls-hint">← → arrow keys to move cloud</p>
+  <p id="controls-hint">&larr; &rarr; arrow keys to move cloud</p>
+  <div id="level-badge">Level 1</div>
+  <div id="lives" role="status" aria-live="polite" aria-label="3 attempts remaining">
+    <span class="heart full">&hearts;</span>
+    <span class="heart full">&hearts;</span>
+    <span class="heart full">&hearts;</span>
+  </div>
 
-  <div id="cloud" role="img" aria-label="Rain cloud">☁️</div>
+  <div id="cloud" role="img" aria-label="Rain cloud">&#x2601;&#xFE0F;</div>
   <div id="rain-container" aria-hidden="true"></div>
-  <div id="plant" role="img" aria-label="Plant" aria-live="polite" class="stage-seed">🌱</div>
+  <div id="plant" role="img" aria-label="Plant" aria-live="polite" class="stage-seed">&#x1F331;</div>
+  <div id="sheep" role="img" aria-label="Hungry sheep">
+    <span class="sheep-body"></span>
+    <span class="sheep-head"></span>
+    <span class="sheep-leg leg-one"></span>
+    <span class="sheep-leg leg-two"></span>
+  </div>
 
+  <div id="round-banner" role="status" aria-live="polite">Attempt 1</div>
   <div id="stage-message" role="status" aria-live="assertive"></div>
   <div id="confetti-container" aria-hidden="true"></div>
 
   <div id="growth-bar-wrapper">
-    <span id="growth-label">🌱 Seed</span>
+    <span id="growth-label">&#x1F331; Seed</span>
     <div id="growth-bar"
          role="progressbar"
          aria-label="Plant growth"

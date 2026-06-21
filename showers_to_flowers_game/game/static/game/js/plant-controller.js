@@ -3,6 +3,8 @@ import { spawnConfetti } from "./confetti.js";
 
 let growth = 0;
 let currentLabel = "seed";
+let onBloom = () => {};
+let onOverwatered = () => {};
 
 function getElement() {
   return document.getElementById("plant");
@@ -25,6 +27,7 @@ function showMessage(text, cls) {
 function fireBloom() {
   showMessage("\u{1F338} Beautiful! You grew a flower!", "msg-bloom");
   spawnConfetti();
+  onBloom();
 }
 
 function fireOverwatered() {
@@ -33,6 +36,7 @@ function fireOverwatered() {
   if (!bar) return;
   bar.classList.add("shake");
   bar.addEventListener("animationend", () => bar.classList.remove("shake"), { once: true });
+  onOverwatered();
 }
 
 function render() {
@@ -61,8 +65,25 @@ function init() {
   render();
 }
 
+function reset() {
+  const el = getElement();
+  growth = 0;
+  currentLabel = "seed";
+  if (!el) return;
+  el.textContent = "\u{1F331}";
+  PLANT_STAGES.forEach(s => el.classList.remove(s.cls));
+  el.classList.add("stage-seed");
+}
+
+function setHandlers(handlers) {
+  onBloom = handlers.onBloom || onBloom;
+  onOverwatered = handlers.onOverwatered || onOverwatered;
+}
+
 export const PlantController = {
   init,
+  reset,
+  setHandlers,
   water,
   getGrowth: () => growth,
   getStage,

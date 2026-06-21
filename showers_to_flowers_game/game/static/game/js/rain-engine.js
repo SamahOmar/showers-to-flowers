@@ -2,6 +2,7 @@ import { RAIN_SETTINGS } from "./constants.js";
 import { CloudController } from "./cloud-controller.js";
 import { GrowthBar } from "./growth-bar.js";
 import { PlantController } from "./plant-controller.js";
+import { SheepController } from "./sheep-controller.js";
 
 let intervalId = null;
 
@@ -47,6 +48,13 @@ function createDrop() {
     drop.style.top = dropY + "px";
 
     if (dropY > window.innerHeight - 90) {
+      if (SheepController.isRainHit(dropX, dropY)) {
+        SheepController.scareAway();
+        spawnSplash(dropX, dropY);
+        drop.remove();
+        return;
+      }
+
       const rect = plantEl.getBoundingClientRect();
       if (dropX > rect.left - 10 && dropX < rect.right + 10) {
         PlantController.water(RAIN_SETTINGS.WATER_AMOUNT);
