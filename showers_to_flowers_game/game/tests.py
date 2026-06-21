@@ -22,6 +22,9 @@ class StaticFilesTests(TestCase):
         "game/js/cutscene.js",
         "game/js/confetti.js",
         "game/js/ambient-clouds.js",
+        "game/js/game-state.js",
+        "game/js/lives-ui.js",
+        "game/js/sheep-controller.js",
     ]
 
     def test_css_file_exists(self):
@@ -66,6 +69,18 @@ class GamePageTests(TestCase):
 
     def test_rain_container_exists(self):
         self.assertContains(self.response, 'id="rain-container"')
+
+    def test_lives_element_exists(self):
+        self.assertContains(self.response, 'id="lives"')
+        self.assertContains(self.response, 'aria-label="3 attempts remaining"')
+
+    def test_level_and_retry_feedback_elements_exist(self):
+        self.assertContains(self.response, 'id="level-badge"')
+        self.assertContains(self.response, 'id="round-banner"')
+
+    def test_sheep_element_exists(self):
+        self.assertContains(self.response, 'id="sheep"')
+        self.assertContains(self.response, 'aria-label="Hungry sheep"')
 
     def test_game_javascript_loads_as_module(self):
         self.assertContains(self.response, 'type="module"')
@@ -186,7 +201,8 @@ class GrowthLogicRegressionTests(TestCase):
         self.assertIn('from "./cloud-controller.js"', source)
         self.assertIn('from "./plant-controller.js"', source)
         self.assertIn('from "./rain-engine.js"', source)
-        self.assertLess(len(source.splitlines()), 40)
+        self.assertIn('from "./sheep-controller.js"', source)
+        self.assertLess(len(source.splitlines()), 160)
 
     def test_js_domcontentloaded_boot(self):
         """Game must boot on DOMContentLoaded, not immediately on script parse."""
@@ -208,3 +224,52 @@ class GrowthLogicRegressionTests(TestCase):
             entrypoint = f.read()
         self.assertIn("gameLayer.focus", entrypoint)
         self.assertIn("CloudController.enable()", entrypoint)
+
+    def test_sheep_interference_is_wired_to_lives(self):
+        sheep_source = finders.find("game/js/sheep-controller.js")
+        self.assertIsNotNone(sheep_source)
+        with open(sheep_source, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("startHunt", source)
+        self.assertIn("onFlowerEaten", source)
+        self.assertIn("onScaredAway", source)
+
+        state_source = finders.find("game/js/game-state.js")
+        self.assertIsNotNone(state_source)
+        with open(state_source, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("INITIAL_LIVES = 3", source)
+        self.assertIn("loseLife", source)
+
+    def test_overwatering_uses_failure_path(self):
+        entrypoint_path = finders.find("game/js/game.js")
+        self.assertIsNotNone(entrypoint_path)
+        with open(entrypoint_path, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("handleOverwatered", source)
+        self.assertIn("Too much water wilted the flower.", source)
+        self.assertIn("onOverwatered: handleOverwatered", source)
+
+    def test_bloom_advances_to_level_two(self):
+        entrypoint_path = finders.find("game/js/game.js")
+        self.assertIsNotNone(entrypoint_path)
+        with open(entrypoint_path, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("GameState.advanceLevel()", source)
+        self.assertIn('showRoundBanner("Level 2")', source)
+
+    def test_attempt_banner_is_gated_by_attempt_change(self):
+        entrypoint_path = finders.find("game/js/game.js")
+        self.assertIsNotNone(entrypoint_path)
+        with open(entrypoint_path, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("showAttemptBannerIfChanged", source)
+        self.assertEqual(source.count("Attempt ${"), 1)
+
+    def test_scared_sheep_faces_retreat_direction(self):
+        sheep_source = finders.find("game/js/sheep-controller.js")
+        self.assertIsNotNone(sheep_source)
+        with open(sheep_source, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("faceDirection", source)
+        self.assertIn('sheep.classList.toggle("from-right", direction < 0)', source)
