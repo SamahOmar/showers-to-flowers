@@ -1,62 +1,44 @@
-const STEP = 18;
-const CLOUD_WIDTH = 70;
-const CLOUD_Y = 110;
+import { RAIN_SETTINGS } from './constants.js';
 
-let x = window.innerWidth / 2 - CLOUD_WIDTH / 2;
-let active = false;
-let initialized = false;
+export class CloudController {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.width = 160;
+        this.x = (canvas.width - this.width) / 2; // Perfectly centered at start
+        this.speed = 8; // Smooth luxury movement speed
+        this.keys = {};
 
-function getElement() {
-  return document.getElementById("cloud");
+        // Bind keyboard listeners for seamless high-shine control
+        this.initEventListeners();
+    }
+
+    initEventListeners() {
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                this.keys[e.key] = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                this.keys[e.key] = false;
+            }
+        });
+    }
+
+    // Return current position dynamic tracking pipeline
+    getX() {
+        this.updatePosition();
+        return this.x;
+    }
+
+    // Process movements and ensure strict screen boundary caps
+    updatePosition() {
+        if (this.keys['ArrowLeft'] && this.x > 0) {
+            this.x -= this.speed;
+        }
+        if (this.keys['ArrowRight'] && this.x < (this.canvas.width - this.width)) {
+            this.x += this.speed;
+        }
+    }
 }
-
-function clamp(val) {
-  return Math.max(0, Math.min(window.innerWidth - CLOUD_WIDTH, val));
-}
-
-function getDirection(e) {
-  if (e.key === "ArrowLeft" || e.code === "ArrowLeft") return -1;
-  if (e.key === "ArrowRight" || e.code === "ArrowRight") return 1;
-  return 0;
-}
-
-function handleKey(e) {
-  if (!active) return;
-  const direction = getDirection(e);
-  if (direction === 0) return;
-
-  const el = getElement();
-  if (!el) return;
-
-  e.preventDefault();
-  x = clamp(x + direction * STEP);
-  el.style.left = x + "px";
-}
-
-function init() {
-  const el = getElement();
-  if (!el) return;
-
-  if (!initialized) {
-    initialized = true;
-    window.addEventListener("keydown", handleKey, { capture: true });
-  }
-  el.style.left = x + "px";
-}
-
-function enable() {
-  init();
-  active = true;
-}
-
-function disable() {
-  active = false;
-}
-
-export const CloudController = {
-  init,
-  enable,
-  disable,
-  getX: () => x,
-  getY: () => CLOUD_Y,
-};

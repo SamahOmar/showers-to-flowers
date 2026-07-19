@@ -20,11 +20,28 @@ export const GROWTH_LABELS = {
   overwatered: "\u{1F940} Overwatered",
 };
 
+
+
+// Game configurations and layout definitions
+export const GROWTH_STAGES = {
+    SEED: 0,
+    SPROUT: 40,
+    BLOOM: 100,
+    DRAMA_QUEEN: 110,
+    MAX_CAP: 120
+};
+
 export const RAIN_SETTINGS = {
-  INTERVAL_MS: 95,
-  FALL_SPEED: 7.5,
-  STREAM_FOLLOW: 0.18,
-  DROP_ORIGIN_X: 32,
-  DROP_ORIGIN_Y: 48,
-  WATER_AMOUNT: 2,
+    MAX_DROPS: 150,
+    DROP_SPEED_MIN: 4,
+    DROP_SPEED_MAX: 8,
+    GLITTER_GLOW_RADIUS: 12
+};
+
+// 🌟 Make sure this exact block is exported perfectly
+export const GLAMOUR_COLORS = {
+    NEON_PINK: '#FF69B4',
+    PASTEL_PINK: '#FFB6C1',
+    GOLDEN_HOUR: '#FFD700',
+    DRAMA_SHADES: '#000000'
 };

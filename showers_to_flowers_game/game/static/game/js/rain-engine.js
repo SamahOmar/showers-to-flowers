@@ -1,87 +1,61 @@
-import { RAIN_SETTINGS } from "./constants.js";
-import { CloudController } from "./cloud-controller.js";
-import { GrowthBar } from "./growth-bar.js";
-import { PlantController } from "./plant-controller.js";
-import { SheepController } from "./sheep-controller.js";
+import { RAIN_SETTINGS, GLAMOUR_COLORS } from './constants.js';
 
-let intervalId = null;
-
-function getRainOriginX() {
-  return CloudController.getX() + RAIN_SETTINGS.DROP_ORIGIN_X;
-}
-
-function spawnSplash(x, y) {
-  const container = document.getElementById("rain-container");
-  if (!container) return;
-
-  const splash = document.createElement("div");
-  splash.className = "splash";
-  splash.style.left = x + "px";
-  splash.style.top = y + "px";
-  container.appendChild(splash);
-  splash.addEventListener("animationend", () => splash.remove());
-}
-
-function createDrop() {
-  const container = document.getElementById("rain-container");
-  const plantEl = document.getElementById("plant");
-  if (!container || !plantEl) return;
-
-  const drop = document.createElement("div");
-  drop.className = "rain-drop";
-  drop.setAttribute("aria-hidden", "true");
-  drop.textContent = "\u{1F4A7}";
-
-  const streamOffset = Math.random() * 16 - 8;
-  let dropX = getRainOriginX() + streamOffset;
-  let dropY = CloudController.getY() + RAIN_SETTINGS.DROP_ORIGIN_Y;
-
-  drop.style.left = dropX + "px";
-  drop.style.top = dropY + "px";
-  container.appendChild(drop);
-
-  function fall() {
-    const targetX = getRainOriginX() + streamOffset;
-    dropX += (targetX - dropX) * RAIN_SETTINGS.STREAM_FOLLOW;
-    dropY += RAIN_SETTINGS.FALL_SPEED;
-    drop.style.left = dropX + "px";
-    drop.style.top = dropY + "px";
-
-    if (dropY > window.innerHeight - 90) {
-      if (SheepController.isRainHit(dropX, dropY)) {
-        SheepController.scareAway();
-        spawnSplash(dropX, dropY);
-        drop.remove();
-        return;
-      }
-
-      const rect = plantEl.getBoundingClientRect();
-      if (dropX > rect.left - 10 && dropX < rect.right + 10) {
-        PlantController.water(RAIN_SETTINGS.WATER_AMOUNT);
-        GrowthBar.update();
-        spawnSplash(dropX, window.innerHeight - 92);
-      }
-      drop.remove();
-      return;
+export class RainEngine {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.particles = [];
     }
-    requestAnimationFrame(fall);
-  }
 
-  fall();
+    // Initialize or generate sparkling magic rain particles
+    createRaindrop(cloudX, cloudWidth) {
+        if (this.particles.length < RAIN_SETTINGS.MAX_DROPS) {
+            this.particles.push({
+                x: cloudX + Math.random() * cloudWidth,
+                y: 120, // Starting right below our pink cloud
+                speed: Math.random() * (RAIN_SETTINGS.DROP_SPEED_MAX - RAIN_SETTINGS.DROP_SPEED_MIN) + RAIN_SETTINGS.DROP_SPEED_MIN,
+                size: Math.random() * 3 + 2,
+                glowColor: Math.random() > 0.5 ? GLAMOUR_COLORS.NEON_PINK : GLAMOUR_COLORS.PASTEL_PINK
+            });
+        }
+    }
+
+    // Render the glitter stars instead of standard lines
+    draw() {
+        this.particles.forEach((drop) => {
+            this.ctx.save();
+            this.ctx.fillStyle = drop.glowColor;
+
+            // Adding high-shine neon reflections to each magic drop
+            this.ctx.shadowBlur = RAIN_SETTINGS.GLITTER_GLOW_RADIUS;
+            this.ctx.shadowColor = GLAMOUR_COLORS.NEON_PINK;
+
+            // Drawing a beautiful small diamond/star vector shape
+            this.ctx.beginPath();
+            this.ctx.moveTo(drop.x, drop.y - drop.size);
+            this.ctx.lineTo(drop.x + drop.size, drop.y);
+            this.ctx.lineTo(drop.x, drop.y + drop.size);
+            this.ctx.lineTo(drop.x - drop.size, drop.y);
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.restore();
+        });
+    }
+
+    // Handle updates and screen boundary checks
+    update(cloudX, cloudWidth, plantTopY) {
+        this.createRaindrop(cloudX, cloudWidth);
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let drop = this.particles[i];
+            drop.y += drop.speed;
+
+            // Check collision with the gorgeous blooming plant
+            if (drop.y >= plantTopY) {
+                this.particles.splice(i, 1);
+            } else if (drop.y > this.canvas.height) {
+                this.particles.splice(i, 1);
+            }
+        }
+    }
 }
-
-function start() {
-  if (intervalId !== null) return;
-  intervalId = setInterval(createDrop, RAIN_SETTINGS.INTERVAL_MS);
-}
-
-function stop() {
-  clearInterval(intervalId);
-  intervalId = null;
-}
-
-function init() {
-  start();
-}
-
-export const RainEngine = { init, start, stop };

@@ -1,201 +1,118 @@
-"use strict";
-import { spawnAmbientClouds } from "./ambient-clouds.js";
-import { CloudController } from "./cloud-controller.js";
-import { Cutscene } from "./cutscene.js";
-import { GameState } from "./game-state.js";
-import { GrowthBar } from "./growth-bar.js";
-import { LivesUI } from "./lives-ui.js";
-import { PlantController } from "./plant-controller.js";
-import { RainEngine } from "./rain-engine.js";
-import { SheepController } from "./sheep-controller.js";
+import { RainEngine } from './rain-engine.js';
+import { PlantController } from './plant-controller.js';
+import { CloudController } from './cloud-controller.js';
+import { GLAMOUR_COLORS } from './constants.js';
 
-console.log("GAME.JS LOADED");
-console.log("GameState instance =", GameState);
-document.addEventListener("sheep:success", () => {
-  console.log("🔥 SHEEP SUCCESS EVENT RECEIVED");
+document.addEventListener('DOMContentLoaded', () => {
+    const canvas = document.getElementById('gameCanvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // Initialize our luxury upgraded application controllers
+    const rainEngine = new RainEngine(canvas);
+    const plantController = new PlantController(canvas);
+    const cloudController = new CloudController(canvas);
+
+    let currentGrowth = 0;
+    const growthBar = document.getElementById('growthBar');
+    const growthProgress = document.getElementById('growthProgress');
+    const glamPointsValue = document.getElementById('glam-points-value');
+    const stageBadge = document.getElementById('stage-badge');
+
+    // Sync initial growth from DOM attributes rendered by Django template
+    if (growthBar) {
+        currentGrowth = parseInt(growthBar.getAttribute('aria-valuenow')) || 0;
+        plantController.setGrowth(currentGrowth);
+    }
+
+    // Mindful dynamic UI updater pipeline to avoid full screen reloads
+    function updateAestheticUI(growth, glamPoints) {
+        if (growthBar && growthProgress) {
+            growthBar.setAttribute('aria-valuenow', growth);
+            growthProgress.style.width = `${Math.min(growth, 100)}%`;
+        }
+        if (glamPointsValue) {
+            glamPointsValue.innerText = glamPoints;
+        }
+        if (stageBadge) {
+            if (growth < 40) stageBadge.innerText = "Seed Phase";
+            else if (growth < 100) stageBadge.innerText = "Sprout Phase";
+            else if (growth < 110) stageBadge.innerText = "Bloom Unlocked 🌸";
+            else stageBadge.innerText = "Drama Queen 🕶️";
+        }
+    }
+
+    // Async engine to broadcast soft life progress directly to Django DB layers
+    function saveProgressToDB(growthIncrement) {
+        // Simple async telemetry pipeline keeping backend and frontend coupled
+        fetch('#', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            },
+            body: JSON.stringify({ increment: growthIncrement })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                updateAestheticUI(data.current_growth, data.glam_points);
+            }
+        }).catch(() => {
+            // Fallback soft validation logic for smooth standalone client experience
+            currentGrowth = Math.min(currentGrowth + growthIncrement, 120);
+            plantController.setGrowth(currentGrowth);
+            const calculatedGlam = Math.floor(currentGrowth * 1.5);
+            updateAestheticUI(currentGrowth, calculatedGlam);
+        });
+    }
+
+    // Custom pipeline to render our glorious sparkling pink cloud vector
+    function drawLuxuryCloud(x, width) {
+        ctx.save();
+        ctx.fillStyle = GLAMOUR_COLORS.PASTEL_PINK;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = GLAMOUR_COLORS.NEON_PINK;
+
+        ctx.beginPath();
+        ctx.arc(x + width * 0.25, 70, 35, 0, Math.PI * 2);
+        ctx.arc(x + width * 0.5, 55, 45, 0, Math.PI * 2);
+        ctx.arc(x + width * 0.75, 70, 35, 0, Math.PI * 2);
+        ctx.rect(x + width * 0.25, 50, width * 0.5, 55);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // 🌊 Infinite High-Shine Animation Loop Pipeline
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const cloudX = cloudController.getX ? cloudController.getX() : cloudController.x;
+        const cloudWidth = cloudController.width || 160;
+
+        // Dynamic plant head calculation for accurate collision bounds
+        const plantTopY = plantController.currentGrowth >= 40 ? plantController.y - 120 : plantController.y - 10;
+
+        rainEngine.update(cloudX, cloudWidth, plantTopY);
+
+        // Core interactive collision handler between glitter drops and the plant target
+        rainEngine.particles.forEach((drop, index) => {
+            const plantX = plantController.x;
+            if (drop.y >= plantTopY - 10 && Math.abs(drop.x - plantX) < 40) {
+                rainEngine.particles.splice(index, 1);
+                saveProgressToDB(1); // Increment growth and trigger high-shine UI feedback
+            }
+        });
+
+        // Repaint all aesthetic layout vectors onto HTML5 canvas framework
+        drawLuxuryCloud(cloudX, cloudWidth);
+        rainEngine.draw();
+        plantController.draw();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
 });
-
-
-
-let bloomTimer = null;
-let roundResolving = false;
-let lastShownAttempt = 0;
-let gamePhase = "growing"; // or "defense"
-
-
-
-function showStatusMessage(text, cls) {
-  const msg = document.getElementById("stage-message");
-  if (!msg) return;
-  msg.textContent = text;
-  msg.className = "visible " + cls;
-}
-
-function showRoundBanner(text) {
-  const banner = document.getElementById("round-banner");
-  if (!banner) return;
-  banner.textContent = text;
-  banner.classList.add("visible");
-  setTimeout(() => banner.classList.remove("visible"), 1200);
-}
-
-function showAttemptBannerIfChanged() {
-  const attempt = GameState.getAttempt();
-  if (attempt === lastShownAttempt) return;
-  lastShownAttempt = attempt;
-  showRoundBanner(`Attempt ${attempt}`);
-}
-
-function updateLevelBadge() {
-  const badge = document.getElementById("level-badge");
-  badge.textContent = `Level ${GameState.getLevel()}`;
-
-
-}
-
-function resetRound() {
-  clearBloomTimer();
-  SheepController.hide();
-  PlantController.reset();
-  GrowthBar.update();
-  roundResolving = false;
-}
-
-function clearBloomTimer() {
-  if (bloomTimer === null) return;
-  clearTimeout(bloomTimer);
-  bloomTimer = null;
-}
-
-function restartAttempt() {
-  resetRound();
-
-  gamePhase = "growing"; // 🔥 ensure clean state reset
-
-  showAttemptBannerIfChanged();
-  showStatusMessage("Grow the next flower.", "msg-info");
-
-  CloudController.enable();
-  RainEngine.start();
-}
-function startDefenseRound() {
-  gamePhase = "defense";
-  showStatusMessage("Sheep incoming!", "msg-warning");
-
-  bloomTimer = setTimeout(() => {
-    bloomTimer = null;
-    if (!roundResolving && gamePhase === "defense") {
-      SheepController.startHunt();
-    }
-  }, 650);
-}
-function handleFailure(message) {
-  if (roundResolving) return;
-  roundResolving = true;
-  clearBloomTimer();
-  SheepController.hide();
-
-  GameState.loseLife();      // decrease lives
-  LivesUI.render();
-  RainEngine.stop();
-  CloudController.disable();
-
-  if (GameState.isGameOver()) {
-    showStatusMessage(`${message} Game over.`, "msg-dead");
-    GameState.resetGame();    // full reset only on game over
-    return;
-  }
-
-  showStatusMessage(`${message} Try again!`, "msg-dead");
-  showAttemptBannerIfChanged();
-
-  // restart only the round, not full game
-  setTimeout(() => restartAttempt(), 1400);
-}
-
-
-
-function handleFlowerEaten() {
-  handleFailure("The sheep ate the flower.");
-}
-
-function handleOverwatered() {
-  handleFailure("Too much water wilted the flower.");
-}
-
-function handleSheepScaredAway() {
-
-  showStatusMessage(
-    "Sheep scared away! Flower protected.",
-    "msg-info"
-  );
-
-}
-
-function handleBloom() {
-  gamePhase = "defense";
-
-  SheepController.hide();
-
-  showStatusMessage("Sheep incoming!", "msg-warning");
-
-  bloomTimer = setTimeout(() => {
-    bloomTimer = null;
-
-    if (!roundResolving && gamePhase === "defense") {
-      SheepController.startHunt();
-    }
-  }, 650);
-}
-
-function handleSheepSuccess() {
-  console.log("SHEEP SUCCESS EVENT FIRED");
-GameState.advanceLevel();
-  updateLevelBadge();
-
-  showRoundBanner(`Level ${GameState.getLevel()}`);
-  showStatusMessage("Sheep survived! Next one incoming...", "msg-info");
-
-  // small delay before next sheep
-  setTimeout(() => {
-    if (PlantController.getStage().label === "bloom") {
-      console.log("bloom and level must advanced");
-      startDefenseRound(); // start a new sheep round
-    }
-  }, 1200);
-}
-
-async function initGame() {
-  const gameLayer = document.getElementById("game-layer");
-  const cutscene = document.getElementById("cutscene");
-  if (!gameLayer) return;
-
-  if (cutscene) {
-    await Cutscene.play();
-  } else {
-    gameLayer.classList.remove("game-hidden");
-    gameLayer.style.opacity = "1";
-  }
-
-  gameLayer.focus({ preventScroll: true });
-  spawnAmbientClouds();
-  SheepController.setHandlers({
-    onFlowerEaten: handleFlowerEaten,
-    onScaredAway: handleSheepScaredAway,
-  });
-  PlantController.setHandlers({
-    onBloom: handleBloom,
-    onOverwatered: handleOverwatered,
-  });
-  CloudController.init();
-  CloudController.enable();
-  PlantController.init();
-  LivesUI.render();
-  updateLevelBadge();
-  showAttemptBannerIfChanged();
-  GrowthBar.update();
-  RainEngine.init();
-
-}
-document.addEventListener("sheep:success", handleSheepSuccess);
-document.addEventListener("DOMContentLoaded", initGame);
