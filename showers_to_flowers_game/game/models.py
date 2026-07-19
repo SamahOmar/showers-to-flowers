@@ -2,15 +2,16 @@ from django.db import models
 
 
 class GameSession(models.Model):
-    """Records a completed game session (plant reached flower stage)."""
+    # Core Logic
+    session_key = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    current_growth = models.IntegerField(default=0)
 
-    started_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    final_growth = models.PositiveSmallIntegerField(default=0)
-
-    class Meta:
-        #add secondary ordering field - That guarantees newer rows appear first even when timestamps are equal.
-        ordering = ["-started_at", "-pk"]
+    # 🌟  (Glamour & Soft Life Tracking)
+    glam_points = models.IntegerField(default=0, help_text="Points earned by romanticizing the game")
+    is_soft_life_achieved = models.BooleanField(default=False,
+                                                help_text="True when the player blooms without overwatering")
 
     def __str__(self):
-        return f"Session {self.pk} — growth {self.final_growth}%"
+        return f"Session {self.session_key} - Glam: {self.glam_points} - Soft Life: {self.is_soft_life_achieved}"
+
