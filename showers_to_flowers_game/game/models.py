@@ -7,7 +7,7 @@ class GameSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     current_growth = models.IntegerField(default=0)
 
-    # 🌟  (Glamour & Soft Life Tracking)
+    # 🌟 (Glamour & Soft Life Tracking)
     glam_points = models.IntegerField(default=0, help_text="Points earned by romanticizing the game")
     is_soft_life_achieved = models.BooleanField(default=False,
                                                 help_text="True when the player blooms without overwatering")
